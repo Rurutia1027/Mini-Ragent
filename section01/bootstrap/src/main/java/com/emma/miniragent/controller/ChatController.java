@@ -54,6 +54,7 @@ public class ChatController {
                             send(emitter, "done", "[DONE]");
                             emitter.complete();
                         });
+
         emitter.onTimeout(emitter::complete);
         emitter.onCompletion(() -> LOG.debug("SSE completed"));
         return emitter;
