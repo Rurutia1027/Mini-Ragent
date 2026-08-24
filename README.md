@@ -61,3 +61,8 @@ Original project: `[ragent](https://github.com/nageoffer/ragent)` (read-only ref
 ```
 section-N = copy(section-(N-1)) + this section's focus code
 ```
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) compiles each `section*` backend with `./mvnw -pl bootstrap -am package -DskipTests` and builds each `frontend` with `npm ci && npm run build`. No Ollama, Postgres, or Redis is required for CI.
+
