@@ -1,6 +1,6 @@
 # Mini Ragent Proj
 
-Split [Ragent](../ragent) into **10 independent, copy-and-accumulate** full-stack mini projects.
+Split [Ragent](https://github.com/nageoffer/ragent) into **10 independent, copy-and-accumulate** full-stack mini projects.
 
 Each section is a complete, runnable project. When you move to the next section, copy the previous directory in full and add the new focus — rather than stacking features in a single repo.
 
