@@ -8,6 +8,7 @@ interface Message {
 }
 
 export default function ChatPage() {
+    // reduce:func, memo:func, fetch:func, state:func create instance, context:func create instance
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function ChatPage() {
 
         setError(null);
         setInput("");
-        setLoading(true);
+        setLoading(true); // state machine flag
 
         const userMessage: Message = { role: "user", content: text };
         const history = messages;
@@ -35,7 +36,10 @@ export default function ChatPage() {
         try {
             const response = await fetch("/api/chat/stream", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "text/event-stream"
+                },
                 body: JSON.stringify({
                     message: text,
                     history: history.map((item) => ({ role: item.role, content: item.content }))
@@ -80,8 +84,8 @@ export default function ChatPage() {
 
                     if (data) {
                         setMessages((prev) => {
-                            const next = [...prev];
-                            const last = next[next.length - 1];
+                            const next = [...prev]; // [0... user-message]
+                            const last = next[next.length - 1]; // last ->assistant message instance
                             if (last?.role === "assistant") {
                                 next[next.length - 1] = { ...last, content: last.content + data };
                             }
@@ -111,6 +115,7 @@ export default function ChatPage() {
                 <h1>Mini Ragent</h1>
                 <p>Section 1 Local Ollama SSE Conversation</p>
             </header>
+
             <main className="chat-panel">
                 {messages.length === 0 && (
                     <div className="empty">Input Question, Ollama will answer</div>
