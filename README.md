@@ -1,386 +1,45 @@
-# AI RAG Engine - Enterprise Cloud-Native Platform 
+# Mini Ragent Proj
 
-**AI RAG Engine** is an enterprise-grade **agentic AI platform** built with **Java 21** and **TypeScript**. It covers the full lifecycle from **document ingestion** and **multi-channel retrieval** to **LLM orchestration**, **intent routing**, and **MCP tool execution**. 
+Split [Ragent](../ragent) into **10 independent, copy-and-accumulate** full-stack mini projects.
 
-This repository is a **structured refactor** of the [nageoffer/ragent](https://github.com/nageoffer/ragent) architecture: same domain capabilities and extension points, reimplemented with
- **cloud-native** building blocks—no regional middleware or vendor lock-in to domestic stacks.
+Each section is a complete, runnable project. When you move to the next section, copy the previous directory in full and add the new focus — rather than stacking features in a single repo.
 
+## Contents
 
---- 
+| Directory | Focus | New dependencies |
+|-----------|--------|------------------|
+| [section-01](section-01/) | Ollama SSE streaming chat | Ollama |
+| [section-02](section-02/) | Auth skeleton (Sa-Token style) | PostgreSQL + Redis |
+| [section-03](section-03/) | Knowledge base + document chunking | — |
+| [section-04](section-04/) | Embedding + pgvector | pgvector |
+| [section-05](section-05/) | Basic RAG Q&A | — |
+| [section-06](section-06/) | Rewrite / intent / memory | — |
+| [section-07](section-07/) | Hybrid retrieval + RRF | — |
+| [section-08](section-08/) | Ingestion pipeline | — |
+| [section-09](section-09/) | ReAct Agent + MCP | MCP Server |
+| [section-10](section-10/) | Trace / rate limiting / deploy | Docker Compose |
 
-## Table of Contents 
+## How to learn
 
-- [Overview](#overview)
-- [Build Strategy](#build-strategy)
-- [Phased Roadmap](#phased-roadmap)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Engineering Practices](#engineering-practices)
-- [Deployment](#deployment)
-- [Quick Start](#quick-start)
-- [Extension Points](#extension-points)
-- [Comparison](#comparison)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
+1. Open `section-0N` and read `docs/FOCUS.md`
+2. Follow that section's `README.md` to start and verify
+3. Compare with the next section (or run `diff -ru section-0N section-0(N+1)` yourself)
 
---- 
+## AI convention
 
-## Overview 
-Production RAG is not "embed + search + chat." Real systems need **ingestion pipelines**, **hybrid retrieval**, **query rewriting**, **intent trees**, **session memory**, **model failover**, **rate limiting**, **distributed tracing**, and **operator-facing consoles**. 
+**Use local Ollama only.** Do not configure cloud API keys.
 
-AI RAG Engine targets that bar: 
-
-| Capability | Summary |
-|------------|---------|
-| **Ingestion** | Pluggable pipeline: parse → chunk → embed → index, with per-node audit logs |
-| **Retrieval** | Parallel semantic + keyword + intent-directed channels; dedup and rerank post-processing |
-| **Agentic layer** | Tree-shaped intent classification, clarification when confidence is low |
-| **Model plane** | Multi-provider routing, first-token probe, three-state circuit breaker, graceful degradation |
-| **Tools** | [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for non-KB intents |
-| **Operations** | Admin UI, RAG trace visualization, knowledge scheduling, user/rate limits |
-
-**Languages & scale (reference baseline from upstream design):** ~40k LOC Java, ~18k LOC TypeScript/React, 20+ domain tables, 22 UI surfaces.
-
-
---- 
-
-## Build Strategy 
-
-Development follows a **copy-and-refactor** approach: 
-
-1. **Preserve behavior** -- Keep request flows, extension interfaces, and domain boundaries aligned with the proven Ragent design (`framework` / `infra-ai` / `bootstrap` / `mcp-server` / `frontend`). 
-
-2. **Replace infrastructure** -- Swap messaging, auth, context propagation, and observability for **Kafka**, **Spring Cloud**, **OpenTemelemtry**, **OAuth2**, and **AWS-managed services** where appropriate. 
-
-3. **Prove with tests** -- Red-green **TDD** for core logic; **BDD** scenarios for user-visible RAG paths; gates in **Jenkins** and Git-based pipelines. 
-
-4. **Ship cloud-native** -- Container images, Helm charts, EKS deployment, HPA, and full observability from day one of the integraiton phase. 
-
-
---- 
-
-## Phased Roadmap 
-
-### Phase 1 -- Exploration / Open Source 
-
-Run locally with portable OSS components:
-
-- PostgreSQL (+ `pgvector`) for relational + vector data
-- Redis for caching, sessions, distributed rate limiting
-- Kafka for async ingestion and domain events
-- Object storage via S3-compatible API (MinIO locally)
-- OpenSearch or pgvector for vector search experiments
-- OpenTelemetry → Jaeger or OTLP collector; Prometheus + Grafana
-
-### Phase 2 — Cloud Integration (AWS)
-
-Progressive replacement with managed services:
-
-| Open-source / local | AWS target |
-|---------------------|------------|
-| MinIO / local files | **Amazon S3** |
-| PostgreSQL (selected domains) | **DynamoDB** (where access patterns fit) |
-| OpenSearch / pgvector | **Amazon OpenSearch Service** |
-| Kafka (managed path) | **Amazon MSK** or **SQS** + workers |
-| Self-hosted K8s | **Amazon EKS** |
-| Metrics/logs | **CloudWatch** + existing Prometheus/Grafana |
-| CI artifacts | **ECR**, optional **CodePipeline** |
-
-Goals: **auto-scaling**, **multi-AZ resilience**, **secrets via IAM/IRSA**, and **enterprise observability** (traces, metrics, structured logs).
-
-
---- 
-
-## Key Features 
-
-- **Document ingestion & indexing** -- Orchestrated pipeline; conditional nodes; failure isolation per stage. 
-
-- **Multi-source retrieval** -- Channel strategy pattern; parallel execution; ordered post-processor chain. 
-
-- **Agentic orchestration** -- Intent tree, query rewrite/decompositon, hybrid term mapping. 
-
-- **Model resilience** -- Priority routing, streaming frist-packet probe, per-model circuit breaker. 
-
-- **Distributed limits** -- Redis-backed queue + semaphore pattern; SSE queue position for clients. 
-
-- **Conversation memory** -- Sliding window + summarization; bounded token growth. 
-
-- **Security** -- OAuth2 / OIDC (e.g., Keyclock locally, Cognito on AWS); role-based admin APIs. 
-
-- **Cloud-antive ready** -- 12-factor services, health/readiness probes, graceful shutdown, config externalization via Spring Cloud Config. 
-
-- **Extensible** -- New channels, post-processors, ingestion nodes, LLM providers, and MCP tools via interface + Spring registraiton-no core fork required. 
-
-
----
-
-## Architecture 
-
-### High-level deployment (target)
-
-```mermaid
-flowchart TB
-    subgraph Clients
-        UI["React Console<br/>Chat + Admin"]
-    end
-
-    subgraph Edge
-        GW["Spring Cloud Gateway<br/>or Ingress + ALB"]
-    end
-
-    subgraph Platform["EKS / Kubernetes"]
-        API["rag-api<br/>Spring Boot"]
-        MCP["mcp-server"]
-        subgraph Modules
-            BS["bootstrap"]
-            FW["framework"]
-            AI["infra-ai"]
-        end
-    end
-
-    subgraph Messaging
-        KF["Apache Kafka<br/>or Amazon MSK"]
-    end
-
-    subgraph Data
-        PG[("PostgreSQL")]
-        OS["OpenSearch Service"]
-        RD["Redis / ElastiCache"]
-        S3["S3"]
-    end
-
-    subgraph Observability
-        OTEL["OpenTelemetry Collector"]
-        PROM["Prometheus"]
-        GRAF["Grafana"]
-    end
-
-    subgraph LLM["LLM Providers"]
-        P1["OpenAI / Anthropic"]
-        P2["Amazon Bedrock"]
-        P3["Azure OpenAI / Ollama"]
-    end
-
-    UI --> GW --> API
-    API --> BS --> FW
-    BS --> AI
-    BS --> MCP
-    BS --> KF
-    BS --> PG
-    BS --> OS
-    BS --> RD
-    BS --> S3
-    AI --> P1
-    AI --> P2
-    AI --> P3
-    API --> OTEL --> PROM --> GRAF
+```bash
+ollama pull llama3.2:latest
+# From section-04 onward you also need an embedding model; see each section README
 ```
 
-### Maven modules
+## Source reference
 
-| Module | Responsibility |
-|--------|----------------|
-| `framework` | Cross-cutting: exceptions, idempotency, IDs, SSE, **OpenTelemetry** trace + baggage propagation, Kafka templates |
-| `infra-ai` | `ChatClient`, embedding, rerank, routing, health store / circuit breaker |
-| `bootstrap` | RAG, knowledge base, ingestion, users, admin APIs |
-| `mcp-server` | Standalone MCP tool host |
-| `frontend` | React + TypeScript SPA |
+Original project: `/Users/emma/LLM/ragent` (read-only reference).
 
-### Core request path (simplified)
+## Accumulation rule
 
 ```
-User query
-  → AuthN / rate limit
-  → Intent classification (tree)
-  → [Optional] rewrite / decompose / clarify
-  → Parallel search channels
-  → Post-processors (dedup → rerank → …)
-  → Prompt assembly (StringTemplate)
-  → Routed LLM stream (SSE) + first-packet probe
-  → [Optional] MCP tool execution
-  → Persist message + RAG trace
+section-N = copy(section-(N-1)) + this section's focus code
 ```
-
---- 
-
-## Tech Stack 
-
-| Layer | Choices |
-|-------|---------|
-| **Backend** | Java 21, Spring Boot 3, Spring Cloud (Config, Gateway, OpenFeign where needed), Maven |
-| **Frontend** | TypeScript, React 18, Vite |
-| **API** | REST + SSE streaming |
-| **RDBMS** | PostgreSQL (Phase 1) → DynamoDB for selected aggregates (Phase 2) |
-| **Vector / search** | pgvector / OpenSearch → **Amazon OpenSearch Service** |
-| **Cache / limits** | Redis |
-| **Messaging** | **Apache Kafka** (local MSK-compatible) → MSK or SQS |
-| **Object storage** | S3 API (MinIO dev → **S3**) |
-| **Auth** | **Spring Security** + OAuth2 Resource Server / OIDC |
-| **Context & tracing** | **OpenTelemetry** (replaces thread-local propagation wrappers); W3C trace context |
-| **Metrics** | Micrometer → Prometheus; CloudWatch in AWS |
-| **MCP** | Official MCP SDK / HTTP transport |
-| **Containers** | Docker, multi-stage builds |
-| **Orchestration** | **Kubernetes**, **Helm**, HPA, optional **Istio** service mesh |
-| **IaC** | Terraform or AWS CDK (EKS, MSK, OpenSearch, RDS where used) |
-| **CI/CD** | **GitHub Actions** + **Jenkins**; image scan; Helm deploy to EKS |
-| **Testing** | JUnit 5, Mockito, **Testcontainers**, Cucumber **BDD**, contract tests for APIs |
-
-**Explicitly not used:** Alibaba TTL, Dubbo, RocketMQ, domestic-only auth SDKs, or region-specific LLM gateways as defaults.
-
-
----
-
-## Engineering Practices 
-
-### Test Pyramid 
-
-| Level | Tooling | Scope |
-|-------|---------|--------|
-| **Unit (TDD)** | JUnit 5, Mockito | Retrieval merge, circuit breaker, intent scoring, chunking |
-| **Integration** | Testcontainers (Postgres, Redis, Kafka) | Repository, pipeline nodes, Kafka consumers |
-| **BDD** | Cucumber + Gherkin | End-to-end: “user asks → retrieval → streamed answer”; admin flows |
-| **Contract** | Spring Cloud Contract / REST Assured | API stability between `frontend` and `bootstrap` |
-| **Load** | k6 or Gatling (optional stage) | Retrieval latency, SSE concurrency |
-
-
-### Git pipeline (Jenkins)
-
-Typical multibranch pipeline stages: 
-
-- **Checkout** -- Shallow clone, commit metadata for traceability 
-- **Build** -- `mvn -B verify` (backend), `npm ci && npm run build` (frontend)
-- **Unit + integration test** -- Fail fast; JaCoco coverage gate (threshold configurable)
-- **BDD** -- Cucumber reports archived as Jenkins artifacts 
-- **Static analysis** -- SpotBugs, Checkstyle, npm audit, Trivy image scan 
-- **Package** -- Docker images tagged `git sha` -> push to **ECR** 
-- **Deploy** -- Helm upgrade to dev/stagging/prod EKS; smock tests via kubectl / HTTP checks
-- **Observability check** -- Verify OTLP export and synthetic trace in stagging
-
-
-
-GitHub Actions can mirror the same stages for PR validation; Jenkins remains the **release** orchestrator for promoted environments. 
-
-
-### Configuration 
-
-- **Spring Cloud Config** (Git-backed or AWS Parameter Store) for environment-specific LLM keys, Kafka brokers, and feature flags. 
-
-- **Secrets** -- Kubernetes Secrets + External Secrets Operator; never commit credentials
-
-
----
-
-## Deployment 
-
-### Local (Docker Compose)
-
-```bash 
-# Infrastructure only (example layout under resources/docker)
-docker compose -f resources/docker/lightweight/docker-compose.yml up -d 
-
-# Backend 
-./mvnw -pl bootstrap -am spring-boot:run 
-
-# Frontend 
-cd frontend && npm install && npm run dev 
-```
-
-### Kubernetes (production-shaped)
-
-```bash 
-# Build images 
-docker build -t ai-rag-engine/api:latest -f bootstrap/Dockerfile . 
-docker build -t ai-rag-engine/mcp:latest -f mcp-server/Dockerfile . 
-
-
-# Helm (charts to be added under deploy/helm)
-helm upgrade --install ai-rag-engine ./deploy/helm/ai-rag-engine \
-  --namespace ai-rag --create-namespace \
-  -f deploy/helm/values-staging.yaml 
-```
-
-
-**Operational checklist** 
-
-- Liveness/readiness probes on API and MCP 
-- HPA on CPU + custom metric (e.g., in-flight RAG requests)
-- PodDisruptionBudgets for API tier 
-- Kafka consumer lag alerts 
-- OpenTelemetry Collector DaemonSet or sidecar 
-- Backup policies for Postgres / OpenSearch snapshots 
-
-
-
---- 
-
-## Quick Start 
-
-**Prerequisites:** JDK 21, Maven 3.9_, Node 20+, Docker, Kafka + Redis + PostgreSQL running locally 
-
-
-1. Clone the repository and copy environment templates (when provided under `resources/config`).  
-2. Start dependencies via Compose or your local Kafka/Redis/Postgres install.  
-3. Configure LLM provider keys in Spring config (OpenAI, Bedrock, or Ollama).  
-4. Run the API and open the React app.  
-5. Send a chat request to `/api/ragent/rag/v3/chat` (exact path may vary during refactor).  
-6. Open **Admin → Trace** to inspect the RAG span tree.
-
----
-
-## Extension Points
-
-| Add… | Implement | Registration |
-|------|-----------|--------------|
-| Search channel | `SearchChannel` | Spring `@Component` |
-| Post-processor | `SearchResultPostProcessor` | Ordered chain bean |
-| Ingestion stage | `IngestionNode` | Pipeline configuration |
-| LLM provider | `ChatClient` in `infra-ai` | Candidate list in config |
-| MCP tool | `MCPToolExecutor` | `DefaultMCPToolRegistry` discovery |
-
-Design patterns used intentionally: **Strategy** (channels), **Chain of Responsibility** (post-processors, model fallback), **Template Method** (ingestion nodes), **Decorator** (stream probe buffer), **Registry** (MCP tools), **AOP** (trace and rate-limit aspects).
-
----
-
-## Comparison
-
-| Dimension | Typical tutorial RAG | AI RAG Engine |
-|-----------|----------------------|---------------|
-| Retrieval | Single vector search | Multi-channel parallel + post-processing |
-| Queries | Raw user text | Rewrite, decompose, context fill |
-| Intent | None | Tree + clarification |
-| Models | Single endpoint | Routed candidates + circuit breaker + first-packet probe |
-| Memory | Full history in prompt | Window + summarization |
-| Ingestion | Ad-hoc scripts | Configurable pipeline + audit |
-| Observability | Logs only | OpenTelemetry traces + admin trace UI |
-| Tools | None | MCP |
-| Delivery | Manual run | Docker, Helm, EKS, Jenkins/Git CI |
-
----
-
-## Contributing
-
-1. Fork and create a feature branch from `main`.  
-2. Add or update **unit tests** (TDD) for logic changes; add **Cucumber** scenarios for user-visible behavior.  
-3. Ensure `mvn verify` and frontend build pass locally.  
-4. Open a PR with a clear description, screenshots for UI changes, and trace screenshots for RAG behavior changes.  
-5. Follow [Conventional Commits](https://www.conventionalcommits.org/) for changelog-friendly history.
-
----
-
-## License
-
-Apache License 2.0 — see [LICENSE](../../LICENSE).
-
----
-
-## Acknowledgments
-
-Architecture and domain modeling are inspired by the excellent open-source **[nageoffer/ragent](https://github.com/nageoffer/ragent)** project. This repository is an independent **cloud-native refactor** with different operational defaults (Kafka, Spring Cloud, OpenTelemetry, OAuth2, AWS, Kubernetes, Jenkins). Upstream is not affiliated with this fork.
-
----
-
-<p align="center">
-  <strong>AI RAG Engine</strong> — production-shaped agentic RAG, built for global cloud standards.
-</p>
