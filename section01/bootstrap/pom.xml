@@ -25,7 +25,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.emma.miniragent.controller.MiniRagentApplication</mainClass>
+                    <mainClass>com.emma.miniragent.MiniRagentApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
