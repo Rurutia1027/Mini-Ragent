@@ -1,0 +1,51 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+frontend/.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / local runtime
+*.log
+logs/
+*.pid
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+application-local.yaml
+application-local.yml
+
+# Test / coverage
+.mvn/timing.properties
+coverage/
+.nyc_output/
