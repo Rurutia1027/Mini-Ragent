@@ -9,7 +9,7 @@ import java.time.Duration;
 @Component
 @ConditionalOnProperty(name = "auth.token-store", havingValue = "redis", matchIfMissing = true)
 public class RedisTokenStore implements TokenStore {
-    private static final String KEY_PREFIX = "auth:token";
+    private static final String KEY_PREFIX = "auth:token:";
     private final StringRedisTemplate redisTemplate;
 
     public RedisTokenStore(StringRedisTemplate redisTemplate) {

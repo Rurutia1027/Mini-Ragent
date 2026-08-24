@@ -1,11 +1,10 @@
-import {FormEvent, useState} from "react";
-import {Simulate} from "react-dom/test-utils";
+import { FormEvent, useState } from "react";
 
 interface LoginPageProps {
     onLogin: (token: string, username: string) => void;
 }
 
-export default function LoginPage({onLogin}: LoginPageProps) {
+export default function LoginPage({ onLogin }: LoginPageProps) {
     const [mode, setMode] = useState<"login" | "register">("login");
     const [username, setUsername] = useState("admin");
     const [password, setPassword] = useState("admin123");
@@ -18,11 +17,29 @@ export default function LoginPage({onLogin}: LoginPageProps) {
         setLoading(true);
 
         try {
+            const path = mode === "login" ? "/api/auth/login" : "/api/auth/register";
+            const response = await fetch(path, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: username.trim(), password })
+            });
 
+            const body = await response.json();
+            if (!response.ok || body.code !== "0") {
+                throw new Error(body.message || `HTTP ${response.status}`);
+            }
+
+            if (mode === "register") {
+                setMode("login");
+                setError(null);
+                return;
+            }
+
+            onLogin(body.data.token, body.data.username);
         } catch (err) {
-
+            setError((err as Error).message || "Request failed");
         } finally {
-
+            setLoading(false);
         }
     }
 

@@ -63,7 +63,8 @@ export default function ChatPage({token, username, onLogout, onUnauthorized}: Ch
                 const contentType = response.headers.get("content-type") || "";
                 if (contentType.includes("application/json")) {
                     const body = await response.json();
-                    if (body?.message?.include("Not Login") || body?.code === "A0000001") {
+                    const msg = String(body?.message || "");
+                    if (/not login|login expired/i.test(msg)) {
                         onUnauthorized();
                     }
                     throw new Error(body.message || `HTTP ${response.status}`);
@@ -98,7 +99,7 @@ export default function ChatPage({token, username, onLogout, onUnauthorized}: Ch
                         }
                     }
 
-                    if (eventName == "done") {
+                    if (eventName === "done") {
                         continue;
                     }
 

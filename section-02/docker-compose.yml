@@ -1,6 +1,7 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
+    pull_policy: never
     container_name: mini-ragent-postgres
     environment:
       POSTGRES_DB: miniragent
@@ -10,12 +11,23 @@ services:
       - "5432:5432"
     volumes:
       - mini-ragent-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U miniragent -d miniragent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    pull_policy: never
     container_name: mini-ragent-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   mini-ragent-pgdata:
