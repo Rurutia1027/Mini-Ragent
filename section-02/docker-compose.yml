@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: mini-ragent-postgres
+    environment:
+      POSTGRES_DB: miniragent
+      POSTGRES_USER: miniragent
+      POSTGRES_PASSWORD: miniragent
+    ports:
+      - "5432:5432"
+    volumes:
+      - mini-ragent-pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: mini-ragent-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  mini-ragent-pgdata:
