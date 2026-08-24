@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, section*]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: Discover sections
+    runs-on: ubuntu-latest
+    outputs:
+      sections: ${{ steps.list.outputs.sections }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: list
+        run: |
+          python3 - << 'PY'
+          import json, os
+          sections = sorted(
+              name for name in os.listdir(".")
+              if name.startswith("section")
+              and os.path.isdir(name)
+              and os.path.isfile(os.path.join(name, "pom.xml"))
+          )
+          if not sections:
+              raise SystemExit("No section*/pom.xml directories found")
+          print("sections=" + json.dumps(sections))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write("sections=" + json.dumps(sections) + "\n")
+          PY
+
+  backend:
+    name: Backend ${{ matrix.section }}
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        section: ${{ fromJson(needs.discover.outputs.sections) }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "26"
+          cache: maven
+          cache-dependency-path: ${{ matrix.section }}/**/pom.xml
+      - name: Compile and package
+        working-directory: ${{ matrix.section }}
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -pl bootstrap -am package -DskipTests
+
+  frontend:
+    name: Frontend ${{ matrix.section }}
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        section: ${{ fromJson(needs.discover.outputs.sections) }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ${{ matrix.section }}/frontend/package-lock.json
+      - name: Typecheck and build
+        working-directory: ${{ matrix.section }}/frontend
+        run: |
+          npm ci
+          npm run build
