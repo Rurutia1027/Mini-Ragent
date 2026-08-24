@@ -10,13 +10,13 @@
     <name>mini-ragent</name>
     <description>Mini Ragent - progressive RAG learning project</description>
     <modules>
-<!--        <module>infra-ai</module>-->
+        <module>infra-ai</module>
 <!--        <module>bootstrap</module>-->
     </modules>
     <properties>
         <java.version>26</java.version>
         <spring-boot.version>4.1.1</spring-boot.version>
-        <okhttp.version>4.12.0</okhttp.version>
+        <spring-ai.version>2.0.0</spring-ai.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -33,9 +33,11 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${okhttp.version}</version>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.emma</groupId>
