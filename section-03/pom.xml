@@ -20,6 +20,8 @@
         <java.version>26</java.version>
         <spring-boot.version>4.1.1</spring-boot.version>
         <spring-ai.version>2.0.0</spring-ai.version>
+        <!-- Spring Boot 4 defaults to JUnit 6; pin 5.13.x for IntelliJ test runner compatibility -->
+        <junit-jupiter.version>5.13.4</junit-jupiter.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -28,6 +30,14 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <!-- Must come before spring-boot-dependencies so JUnit 5 wins over Boot 4's JUnit 6 -->
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
